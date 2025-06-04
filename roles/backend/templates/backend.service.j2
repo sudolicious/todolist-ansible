@@ -1,0 +1,15 @@
+[Unit]
+Description=Todolist Backend
+
+[Service]
+WorkingDirectory={{ backend_code_dir }}
+ExecStart={{ backend_code_dir }}/todolist-backend
+Environment="DB_HOST={{ backend_pg_host }}"
+Environment="DB_PORT={{ backend_pg_port }}"
+Environment="DB_USER={{ backend_pg_user }}"
+Environment="DB_PASSWORD={{ backend_pg_password }}"
+Environment="DB_NAME={{ backend_pg_db }}"
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

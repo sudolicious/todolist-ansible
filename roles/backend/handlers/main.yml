@@ -1,0 +1,7 @@
+- name: restart backend
+  become: yes
+  systemd:
+    name: todolist-backend
+    state: restarted
+    enabled: yes
+    daemon_reload: yes

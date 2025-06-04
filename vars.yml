@@ -1,0 +1,30 @@
+app_dir: "/opt/todolist"
+
+# PostgreSQL
+postgres_db: "dbgo"
+postgres_user: "olgadb"
+postgres_password: "1234"
+postgres_version: "16"
+
+# Backend (Go)
+backend_repo: "https://github.com/sudolicious/todolist.git"
+backend_branch: "master"
+backend_src_dir: "{{ app_dir }}/backend"
+backend_code_dir: "{{ backend_src_dir }}/backend"
+backend_port: 8080
+backend_pg_host: "localhost"
+backend_pg_port: "5432"
+backend_pg_user: "{{ postgres_user }}"
+backend_pg_password: "{{ postgres_password }}"
+backend_pg_db: "{{ postgres_db }}"
+
+# Frontend
+frontend_repo: "https://github.com/sudolicious/todolist.git"
+frontend_branch: "master"
+frontend_src_dir: "{{ app_dir }}/frontend"
+frontend_app_dir: "{{ frontend_src_dir }}/frontend"
+frontend_domain: "localhost"
+frontend_port: "3000"
+frontend_build_dir: "{{ frontend_app_dir }}/build"
+frontend_api_url: "http://localhost:{{ backend_port }}"
+node_version: "18.x"

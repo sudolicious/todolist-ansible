@@ -1,0 +1,19 @@
+---
+- name: Clean deployment
+  hosts: vm1
+  become: yes
+  vars_files:
+    - vars.yml 
+  
+  tasks:
+    - name: Remove backend directory
+      file:
+        path: "{{ app_dir }}/backend"
+        state: absent
+      ignore_errors: yes
+
+    - name: Remove frontend directory
+      file:
+        path: "{{ app_dir }}/frontend"
+        state: absent
+      ignore_errors: yes
