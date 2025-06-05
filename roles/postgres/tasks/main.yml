@@ -16,6 +16,16 @@
     enabled: yes
   become: yes
     
+- name: Configure trust authentication
+  ansible.builtin.blockinfile:
+    path: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
+    block: |
+      local all postgres trust
+      local all all trust
+    insertbefore: "^# TYPE"
+  notify: restart postgresql
+  become: yes
+  
 - name: Create PostgreSQL user
   community.postgresql.postgresql_user:
     name: "{{ postgres_user }}"
