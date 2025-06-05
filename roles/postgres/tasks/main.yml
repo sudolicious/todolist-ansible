@@ -1,19 +1,35 @@
 ---
-- name: Install PostgreSQL
+- name: Install dependencies
   apt:
-    name: postgresql-{{ postgres_version }}
+    name:
+      - python3
+      - python3-psycopg2
+      - postgresql-{{ postgres_version }}
     state: present
+    update_cache: yes
+  become: yes
 
-- name: Create database
-  postgresql_db:
-    name: "{{ postgres_db }}"
-    encoding: UTF-8
-    login_user: postgres
-
-- name: Create user
-  postgresql_user:
+- name: Ensure PostgreSQL service is running
+  ansible.builtin.service:
+    name: postgresql
+    state: started
+    enabled: yes
+  become: yes
+    
+- name: Create PostgreSQL user
+  community.postgresql.postgresql_user:
     name: "{{ postgres_user }}"
     password: "{{ postgres_password }}"
-    db: "{{ postgres_db }}"
-    priv: "ALL"
     login_user: postgres
+    port: 5432
+    login_host: "127.0.0.1"
+    role_attr_flags: "CREATEDB,LOGIN"
+    state: present
+    
+- name: Create database
+  community.postgresql.postgresql_db:
+    name: "{{ postgres_db }}"
+    owner: "{{ postgres_user }}"
+    login_user: postgres
+    login_host: "127.0.0.1"
+    port: 5432

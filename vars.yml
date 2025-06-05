@@ -2,7 +2,7 @@ app_dir: "/opt/todolist"
 
 # PostgreSQL
 postgres_db: "dbgo"
-postgres_user: "olgadb"
+postgres_user: "olga"
 postgres_password: "1234"
 postgres_version: "16"
 
