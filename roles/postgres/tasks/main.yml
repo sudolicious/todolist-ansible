@@ -1,45 +1,97 @@
 ---
-- name: Install dependencies
+- name: Install Docker prerequisites
   apt:
     name:
-      - python3
-      - python3-psycopg2
-      - postgresql-{{ postgres_version }}
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
     state: present
     update_cache: yes
   become: yes
+  tags: docker
 
-- name: Ensure PostgreSQL service is running
-  ansible.builtin.service:
-    name: postgresql
+- name: Add Docker GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+  tags: docker
+
+- name: Add Docker repository
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+    state: present
+  tags: docker
+
+- name: Install Docker
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    state: present
+    update_cache: yes
+  become: yes
+  tags: docker
+
+- name: Ensure Docker is running
+  service:
+    name: docker
     state: started
     enabled: yes
   become: yes
-    
-- name: Configure trust authentication
-  ansible.builtin.blockinfile:
-    path: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
-    block: |
-      local all postgres trust
-      local all all trust
-    insertbefore: "^# TYPE"
-  notify: restart postgresql
-  become: yes
+  tags: docker
+
+- name: Pull PostgreSQL image
+  docker_image:
+    name: "{{ postgres_image }}"
+    source: pull
+  tags: postgres
+
+- name: Create Docker volume for PostgreSQL
+  docker_volume:
+    name: postgres_data
+    driver: local
+  tags: postgres
+
+- name: Ensure network exists
+  docker_network:
+    name: todolist_network
+    driver: bridge
+
+- name: Start PostgreSQL container
+  docker_container:
+    name: "{{ postgres_container_name }}"
+    image: "{{ postgres_image }}"
+    state: started
+    restart_policy: unless-stopped
+    networks:
+      - name: todolist_network
+    ports:
+      - "5432:{{ postgres_port }}"
+    env:
+      POSTGRES_USER: "{{ postgres_user }}"
+      POSTGRES_PASSWORD: "{{ postgres_password }}"
+      POSTGRES_DB: "{{ postgres_db }}"
+    volumes:
+      - "postgres_data:/var/lib/postgresql/data"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U {{ postgres_user }} -d {{ postgres_db }}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  register: postgres_container
   
-- name: Create PostgreSQL user
-  community.postgresql.postgresql_user:
-    name: "{{ postgres_user }}"
-    password: "{{ postgres_password }}"
-    login_user: postgres
-    port: 5432
-    login_host: "127.0.0.1"
-    role_attr_flags: "CREATEDB,LOGIN"
-    state: present
-    
-- name: Create database
-  community.postgresql.postgresql_db:
-    name: "{{ postgres_db }}"
-    owner: "{{ postgres_user }}"
-    login_user: postgres
-    login_host: "127.0.0.1"
-    port: 5432
+- name: Ensure PostgreSQL container is running
+  docker_container:
+    name: "{{ postgres_container_name }}"
+    image: "{{ postgres_image }}"
+    state: started
+    restart_policy: always
+    ports:
+      - "5432:5432"
+    env:
+      POSTGRES_USER: "{{ postgres_user }}"
+      POSTGRES_PASSWORD: "{{ postgres_password }}"
+      POSTGRES_DB: "{{ postgres_db }}"
+    command: postgres -c 'listen_addresses=*'

@@ -2,14 +2,15 @@
 Description=Todolist Backend
 
 [Service]
-WorkingDirectory={{ backend_code_dir }}
+Environment="DB_HOST={{ postgres_host }}"
+Environment="DB_PORT={{ postgres_port }}"
+Environment="DB_USER={{ postgres_user }}"
+Environment="DB_PASSWORD={{ postgres_password }}"
+Environment="DB_NAME={{ postgres_db }}"
 ExecStart={{ backend_code_dir }}/todolist-backend
-Environment="DB_HOST={{ backend_pg_host }}"
-Environment="DB_PORT={{ backend_pg_port }}"
-Environment="DB_USER={{ backend_pg_user }}"
-Environment="DB_PASSWORD={{ backend_pg_password }}"
-Environment="DB_NAME={{ backend_pg_db }}"
 Restart=always
+User=root
+WorkingDirectory={{ backend_code_dir }}
 
 [Install]
 WantedBy=multi-user.target

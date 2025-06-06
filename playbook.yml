@@ -1,5 +1,5 @@
 ---
-- hosts: vm1
+- hosts: vm2
   become: yes
   tasks:
     - name: Full system update (apt update && upgrade)
@@ -10,7 +10,7 @@
       tags: update 
 
 - name: Deploy ToDo List Application
-  hosts: vm1
+  hosts: vm2
   gather_facts: yes
   become: yes
   vars_files:

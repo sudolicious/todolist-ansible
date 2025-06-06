@@ -7,15 +7,9 @@
     state: present
   tags: nodejs
 
-- name: Clone repository
-  git:
-    repo: "{{ frontend_repo }}"
-    dest: "{{ frontend_src_dir }}"
-    version: "{{ frontend_branch }}"
-
 - name: Install dependencies
   shell: |
-    cd {{ frontend_app_dir }}
+    cd {{ frontend_code_dir }}
     npm install
   args:
     executable: /bin/bash 
@@ -27,14 +21,14 @@
 
 - name: Build frontend
   shell: |
-    cd {{ frontend_app_dir }}
+    cd {{ frontend_code_dir }}
     npm run build
     
 - name: Create frontend .env file
   copy:
     content: |
       REACT_APP_API_BASE_URL={{ frontend_api_url }}
-    dest: "{{ frontend_app_dir }}/.env"
+    dest: "{{ frontend_code_dir }}/.env"
 
 - name: Configure Nginx
   template:

@@ -13,9 +13,20 @@
 
 - name: Clone repository
   git:
-    repo: "{{ backend_repo }}"
-    dest: "{{ backend_src_dir }}"
-    version: "{{ backend_branch }}"
+    repo: "{{ app_repo }}"
+    dest: "{{ app_dir }}"
+    version: "{{ app_branch }}"
+    
+- name: Update backend configuration
+  template:
+    src: config.j2
+    dest: "{{ backend_code_dir }}/config.yaml"
+  vars:
+    db_host: "host.docker.internal"
+    db_port: "{{ postgres_port }}"
+    db_user: "{{ postgres_user }}"
+    db_password: "{{ postgres_password }}"
+    db_name: "{{ postgres_db }}"
 
 - name: Install dependencies
   shell: |
@@ -32,9 +43,19 @@
     src: backend.service.j2
     dest: /etc/systemd/system/todolist-backend.service
   notify: restart backend
-
-- name: Enable and start service
+  
+- name: Start backend service
   systemd:
     name: todolist-backend
-    enabled: yes
     state: started
+    enabled: yes
+    
+- name: Run migrations
+  become: yes
+  command: >
+    docker run --rm --network host
+    -v {{ backend_code_dir }}/migrations:/migrations
+    migrate/migrate:v4.16.2
+    -path /migrations
+    -database "postgres://{{ postgres_user }}:{{ postgres_password }}@localhost:5432/{{ postgres_db }}?sslmode=disable"
+    up
