@@ -1,43 +1,24 @@
 ---
-- name: Install Node.js and npm
-  apt:
-    name:
-      - nodejs
-      - npm
-    state: present
-  tags: nodejs
-
-- name: Install dependencies
-  shell: |
-    cd {{ frontend_code_dir }}
-    npm install
+- name: Build frontend image using docker command
+  become: yes
+  command: >
+    docker build
+    -t {{ frontend_image_name }}
+    -f {{ frontend_src_path }}/Dockerfile
+    {{ frontend_src_path }}
   args:
-    executable: /bin/bash 
+    creates: "{{ frontend_image_name }}"
+  register: build_result
+  changed_when: "'Successfully built' in build_result.stdout"
 
-- name: Install Nginx
-  apt:
-    name: nginx
-    state: present  
-
-- name: Build frontend
-  shell: |
-    cd {{ frontend_code_dir }}
-    npm run build
-    
-- name: Create frontend .env file
-  copy:
-    content: |
-      REACT_APP_API_BASE_URL={{ frontend_api_url }}
-    dest: "{{ frontend_code_dir }}/.env"
-
-- name: Configure Nginx
-  template:
-    src: nginx.conf.j2
-    dest: /etc/nginx/sites-available/todolist
-  notify: restart nginx
-
-- name: Enable Nginx config
-  file:
-    src: /etc/nginx/sites-available/todolist
-    dest: /etc/nginx/sites-enabled/todolist
-    state: link
+- name: Deploy frontend container
+  community.docker.docker_container:
+    name: frontend
+    image: "{{ frontend_image_name }}"
+    env:
+      REACT_APP_API_BASE_URL: "http://backend:8080"
+    ports:
+      - "3000:80"
+    networks:
+      - name: "{{ network_name }}"
+    restart_policy: "unless-stopped"

@@ -1,97 +1,27 @@
 ---
-- name: Install Docker prerequisites
-  apt:
-    name:
-      - apt-transport-https
-      - ca-certificates
-      - curl
-      - software-properties-common
-    state: present
-    update_cache: yes
-  become: yes
-  tags: docker
+- name: Create volume directory
+  file:
+    path: "{{ postgres_volume_path }}"
+    state: directory
+    mode: '0755'
 
-- name: Add Docker GPG key
-  apt_key:
-    url: https://download.docker.com/linux/ubuntu/gpg
-    state: present
-  tags: docker
-
-- name: Add Docker repository
-  apt_repository:
-    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
-    state: present
-  tags: docker
-
-- name: Install Docker
-  apt:
-    name:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-    state: present
-    update_cache: yes
-  become: yes
-  tags: docker
-
-- name: Ensure Docker is running
-  service:
-    name: docker
-    state: started
-    enabled: yes
-  become: yes
-  tags: docker
-
-- name: Pull PostgreSQL image
-  docker_image:
-    name: "{{ postgres_image }}"
-    source: pull
-  tags: postgres
-
-- name: Create Docker volume for PostgreSQL
-  docker_volume:
-    name: postgres_data
-    driver: local
-  tags: postgres
-
-- name: Ensure network exists
-  docker_network:
-    name: todolist_network
-    driver: bridge
-
-- name: Start PostgreSQL container
-  docker_container:
-    name: "{{ postgres_container_name }}"
+- name: Deploy PostgreSQL container
+  community.docker.docker_container:
+    name: postgres
     image: "{{ postgres_image }}"
-    state: started
-    restart_policy: unless-stopped
-    networks:
-      - name: todolist_network
-    ports:
-      - "5432:{{ postgres_port }}"
+    platform: "linux/amd64"
     env:
+      POSTGRES_DB: "{{ postgres_db }}"
       POSTGRES_USER: "{{ postgres_user }}"
       POSTGRES_PASSWORD: "{{ postgres_password }}"
-      POSTGRES_DB: "{{ postgres_db }}"
     volumes:
-      - "postgres_data:/var/lib/postgresql/data"
+      - "{{ postgres_volume_path }}:/var/lib/postgresql/data"
+    ports:
+      - "5432:5432"
+    networks:
+      - name: "{{ network_name }}"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U {{ postgres_user }} -d {{ postgres_db }}"]
       interval: 5s
       timeout: 5s
       retries: 5
-  register: postgres_container
-  
-- name: Ensure PostgreSQL container is running
-  docker_container:
-    name: "{{ postgres_container_name }}"
-    image: "{{ postgres_image }}"
-    state: started
-    restart_policy: always
-    ports:
-      - "5432:5432"
-    env:
-      POSTGRES_USER: "{{ postgres_user }}"
-      POSTGRES_PASSWORD: "{{ postgres_password }}"
-      POSTGRES_DB: "{{ postgres_db }}"
-    command: postgres -c 'listen_addresses=*'

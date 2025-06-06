@@ -1,29 +1,20 @@
-app_dir: "/opt/todolist"
+network_name: "todo-network"
 
-# PostgreSQL
-postgres_host: "localhost"
-postgres_user: "olga"
-postgres_password: "1234"
+# Postgres
+postgres_image: "bitnami/postgresql:15"
 postgres_db: "dbgo"
-postgres_container_name: "postgres"
-postgres_image: "postgres:{{ postgres_version }}"
-postgres_version: "16"
-postgres_port: 5432
+postgres_user: "olgadb"
+postgres_password: "1234"
+postgres_volume_path: "/opt/todolist/postgres_data"
 
+# Repository 
 app_repo: "https://github.com/sudolicious/todolist.git"
-app_branch: "master"
+app_version: "master"
 
-# Backend
-backend_code_dir: "{{ app_dir }}/backend" 
-#backend_pg_user: "{{ postgres_user }}"
-#backend_pg_password: "{{ postgres_password }}"
-#backend_pg_db: "{{ postgres_db }}"
-#backend_pg_host: "{{ postgres_container_name }}"
-backend_port: 8080
+# Backend 
+backend_src_path: "/opt/todolist/backend"
+backend_image_name: "todo-backend"
 
 # Frontend
-frontend_code_dir: "{{ app_dir }}/frontend"
-frontend_domain: "localhost"
-frontend_api_url: "http://localhost:{{ backend_port }}"
-node_version: "18.x"
-frontend_port: 3000
+frontend_src_path: "/opt/todolist/frontend"
+frontend_image_name: "todo-frontend"

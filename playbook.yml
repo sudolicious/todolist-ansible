@@ -1,22 +1,12 @@
 ---
-- hosts: vm2
-  become: yes
-  tasks:
-    - name: Full system update (apt update && upgrade)
-      apt:
-        update_cache: yes
-        upgrade: yes
-        autoremove: yes
-      tags: update 
-
-- name: Deploy ToDo List Application
-  hosts: vm2
-  gather_facts: yes
+- name: Deploy Todo Application
+  hosts: vm1
   become: yes
   vars_files:
     - vars.yml
- 
+  
   roles:
+    - common
     - postgres
     - backend
     - frontend

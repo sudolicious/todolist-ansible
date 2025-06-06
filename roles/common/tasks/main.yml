@@ -1,0 +1,41 @@
+---
+- name: Install Docker and dependencies
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+  loop:
+    - docker.io
+    - docker-compose
+    - git
+  become: yes
+  
+- name: Ensure Docker service is running
+  become: yes
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Wait for Docker socket
+  wait_for:
+    path: "/var/run/docker.sock"
+    timeout: 30
+
+- name: Create Docker network
+  become: yes
+  community.docker.docker_network:
+    name: "{{ network_name }}"
+    driver: bridge
+
+- name: Create Docker network
+  community.docker.docker_network:
+    name: "{{ network_name }}"
+    driver: bridge
+
+- name: Clone full repository
+  git:
+    repo: "{{ app_repo }}"
+    dest: "/opt/todolist"
+    version: "{{ app_version }}"
+    force: yes

@@ -1,61 +1,31 @@
 ---
-- name: Install git
+- name: Copy backend files
   become: yes
-  apt:
-    name: git
-    state: present
-    update_cache: yes
-    
-- name: Install Go
-  apt:
-    name: golang
-    state: present
+  copy:
+    src: "/opt/todolist/backend/"
+    dest: "{{ backend_src_path }}"
+    remote_src: yes
 
-- name: Clone repository
-  git:
-    repo: "{{ app_repo }}"
-    dest: "{{ app_dir }}"
-    version: "{{ app_branch }}"
-    
-- name: Update backend configuration
-  template:
-    src: config.j2
-    dest: "{{ backend_code_dir }}/config.yaml"
-  vars:
-    db_host: "host.docker.internal"
-    db_port: "{{ postgres_port }}"
-    db_user: "{{ postgres_user }}"
-    db_password: "{{ postgres_password }}"
-    db_name: "{{ postgres_db }}"
-
-- name: Install dependencies
-  shell: |
-    cd {{ backend_code_dir }}
-    go mod download
-
-- name: Build backend
-  shell: |
-    cd {{ backend_code_dir }}
-    go build -o todolist-backend
-
-- name: Create systemd service
-  template:
-    src: backend.service.j2
-    dest: /etc/systemd/system/todolist-backend.service
-  notify: restart backend
-  
-- name: Start backend service
-  systemd:
-    name: todolist-backend
-    state: started
-    enabled: yes
-    
-- name: Run migrations
+- name: Build backend image using docker command
   become: yes
   command: >
-    docker run --rm --network host
-    -v {{ backend_code_dir }}/migrations:/migrations
-    migrate/migrate:v4.16.2
-    -path /migrations
-    -database "postgres://{{ postgres_user }}:{{ postgres_password }}@localhost:5432/{{ postgres_db }}?sslmode=disable"
-    up
+    docker build
+    --platform linux/amd64
+    -t {{ backend_image_name }}
+    -f {{ backend_src_path }}/Dockerfile
+    {{ backend_src_path }}
+  args:
+    creates: "{{ backend_image_name }}"
+  register: build_result
+  changed_when: "'Successfully built' in build_result.stdout"
+
+- name: Run backend container
+  community.docker.docker_container:
+    name: backend
+    image: "{{ backend_image_name }}"
+    env_file: "{{ backend_src_path }}/.env"
+    ports:
+      - "8080:8080"
+    networks:
+      - name: "{{ network_name }}"
+    restart_policy: "unless-stopped"
