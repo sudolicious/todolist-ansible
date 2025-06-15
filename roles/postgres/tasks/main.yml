@@ -1,11 +1,13 @@
 ---
 - name: Create volume directory
+  become: yes
   file:
     path: "{{ postgres_volume_path }}"
     state: directory
     mode: '0755'
 
 - name: Deploy PostgreSQL container
+  become: yes
   community.docker.docker_container:
     name: postgres
     image: "{{ postgres_image }}"

@@ -1,0 +1,26 @@
+---
+network_name: "todo-network"
+postgres_volume_path: "/opt/todolist/postgres_data"
+
+postgres_image: "bitnami/postgresql:16"
+backend_image_name: "todo-backend"
+frontend_image_name: "todo-frontend"
+
+app_repo: "https://github.com/sudolicious/todolist-docker-compose.git"
+app_version: "master"
+backend_src_path: "/opt/todolist/backend"
+frontend_src_path: "/opt/todolist/frontend"
+
+ansible_user: "olga"
+ansible_become: yes
+ansible_become_method: sudo
+
+# Загрузка секретов из vault
+vault_content: "{{ lookup('file', 'inventory/vault.yml') | from_yaml }}"
+
+# Секретные переменные
+ansible_become_pass: "{{ vault_content.vm1.ansible_become_pass }}"
+ansible_ssh_private_key_file: "{{ vault_content.vm1.ansible_ssh_private_key_file }}"
+postgres_db: "{{ vault_content.vm1.postgres_db }}"
+postgres_user: "{{ vault_content.vm1.postgres_user }}"
+postgres_password: "{{ vault_content.vm1.postgres_password }}"

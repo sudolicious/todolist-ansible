@@ -1,9 +1,9 @@
 ---
 - name: Deploy Todo Application
   hosts: vm1
-  become: yes
   vars_files:
-    - vars.yml
+    - inventory/vault.yml
+    - group_vars/all/vault.yml
   
   roles:
     - common
