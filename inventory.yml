@@ -1,0 +1,20 @@
+all:
+  hosts:
+    localhost:
+      ansible_connection: local
+
+    vm1:
+      ansible_host: 192.168.1.167
+      ansible_user: olga
+      ansible_ssh_private_key_file: "/home/olga/.ssh/id_rsa"
+      ansible_python_interpreter: "/usr/bin/python3"
+      ansible_become: yes
+      ansible_become_method: sudo
+      ansible_become_pass: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          37333762393064613533343166616661643765323133666361393662376361623363373937633064
+          6431366538386333646664343831613639353566366333640a653238636132326630326166333339
+          64393064613164613864653836346163616661366364616335366466633536303032626633396137
+          3164666136633162330a626135613166373733383032383339643866326133613361646466333433
+          6630
+
