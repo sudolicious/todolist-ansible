@@ -20,14 +20,15 @@ ansible-playbook playbook.yml --ask-vault-pass
 Использование.
 
 Все чувствительные данные хранятся в зашифрованном виде в:
-inventori.ini
+inventori.yml
 vars.yml
 
 Структура проекта
 .
+├── readme.txt                 # Этот файл
 ├── ansible.cfg                # Конфигурация Ansible
 ├── vars.yml                   # Зашифрованные переменные      
-├── inventory.ini              # Зашифрованный файл инвентари
+├── inventory.yml              # Зашифрованный файл инвентари
 ├── playbook.yml               # Основной плейбук
 └── roles/                     # Роли Ansible
     ├── backend/               # Роль backend-приложения
