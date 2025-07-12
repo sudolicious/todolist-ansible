@@ -4,8 +4,8 @@ Application is served via http://altenar-intership-2025.com
 
 Architecture Overview:
 VM1: Nginx reverse proxy serving static frontend and routing API requests
-VM2 & VM3: Identical backend application servers (configured via Ansible)
-VM4: Database server (could be combined with another VM if needed)
+VM2 & VM3: Identical backend application servers
+VM4: Database server
 
 Requirements:
 - Ansible 2.9+
