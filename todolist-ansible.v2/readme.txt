@@ -16,21 +16,27 @@ Requirements:
 Setup
 
     1. Clone the repository:
+    
     git clone https://github.com/sudolicious/todolist-ansible.git
     cd todolist-ansible.v2
 
     2. Configure DNS on VMs:
+    
     ansible-playbook playbooks/dns.yml --ask-vault-pass
 
     3. Deploy the application for 4 VMs:
+    
     ansible-playbook playbooks/playbook.yml --ask-vault-pass
 
     4. Rolling Updates with Zero Downtime (2 backend versions: v1.0.0 and v1.0.1)
     
     4.1 Downgrade to v1.0.0:
+    
     ansible-playbook playbooks/rolling-update.yml -e "backend_version=v1.0.0" --ask-vault-pass
+    
     This version doesn't have endpoint /health
     Check on VM2 or VM3: curl -v http://localhost:8080/health
+    
     You'll see output:
     [GET /health HTTP/1.1
     Host: localhost:8080
@@ -44,7 +50,12 @@ Setup
    < Connection: keep-alive]
 
    4.2 Upgrade to v1.0.1:
+   
    ansible-playbook playbooks/rolling-update.yml -e "backend_version=v1.0.1" --ask-vault-pass
+   
+   This version has endpoint /health
+   Check on VM2 or VM3: curl -v http://localhost:8080/health
+    
    You'll see output:
    [GET /health HTTP/1.1
     Host: localhost:8080
