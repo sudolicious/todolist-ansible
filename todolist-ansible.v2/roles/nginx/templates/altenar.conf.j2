@@ -1,0 +1,42 @@
+upstream backend_servers {
+    least_conn;
+    {% for ip in backend_servers %}
+    server {{ ip }}:{{ backend_port }} max_fails=3 fail_timeout=30s;
+    {% endfor %}
+    keepalive 32;
+}
+
+server {
+    listen 80;
+    server_name {{ domain_name }} www.{{ domain_name }};
+
+    location / {
+        root /opt/todolist/frontend/frontend/build;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        expires -1;
+    }
+
+    location /api {
+        proxy_pass http://backend_servers;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        
+        proxy_next_upstream error timeout http_500 http_502 http_503 http_504;
+        proxy_next_upstream_timeout 2s;
+        proxy_next_upstream_tries 2;
+        
+        proxy_connect_timeout 2s;
+        proxy_send_timeout 5s;
+        proxy_read_timeout 10s;
+    }
+    
+    location ~ /\. {
+        deny all;
+        return 404;
+    }
+}

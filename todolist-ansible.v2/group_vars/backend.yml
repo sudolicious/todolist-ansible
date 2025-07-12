@@ -1,0 +1,19 @@
+---
+backend_version: "v1.0.0"
+backend_repo: "https://github.com/sudolicious/todolist.git"
+backend_branch: "main"
+backend_src_dir: "{{ app_dir }}/{{ backend_version }}"
+backend_code_dir: "{{ backend_src_dir }}/backend"
+
+# DB Connection
+backend_db_host: "{{ db_host }}"
+backend_db_port: "{{ postgres_port }}"
+backend_db_name: "dbgo"
+backend_db_user: "olga"
+backend_db_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          34336162323638306266303434643536643839323666653463303263393865656433356537386433
+          3732636564613332343030636563616163303361373834320a393863633561383534306530353334
+          37623662366566346635383666396433323164343066383937396134616362383837663736316366
+          3935336631356438320a613536306532303064346261343739333564366435383736653166343434
+          3863

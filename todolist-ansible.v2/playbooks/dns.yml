@@ -1,0 +1,17 @@
+---
+- name: Configure DNS settings on all hosts
+  hosts: all
+  tasks:
+    - name: Add domain entries to /etc/hosts
+      become: yes
+      blockinfile:
+        path: /etc/hosts
+        block: |
+          # ANSIBLE MANAGED BLOCK - Domain mappings
+          {{ nginx_ip }} {{ domain_name }}
+          {{ backend1_ip }} backend1.internal
+          {{ backend2_ip }} backend2.internal
+          {{ db_host }} db.internal
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - Domain mappings"
+        create: yes
+      tags: dns

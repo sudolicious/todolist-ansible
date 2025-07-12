@@ -1,0 +1,23 @@
+---
+# Common settings
+app_dir: "/opt/todolist"
+ansible_user: olga
+ansible_ssh_private_key_file: "/home/olga/.ssh/id_rsa"
+ansible_python_interpreter: "/usr/bin/python3"
+ansible_become_pass: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          39656134623937303636363262326434393532373835316239623234303131373931333735633733
+          3738613536613333636138633366303030663337363263630a383164326363336539376163643964
+          66356365613531643031616530353435343039383339643438623034313239343161626630633933
+          3465643232656165630a646334386333353861316635646431383031613364623062316465326231
+          6239
+
+# Network Configuration
+domain_name: altenar-internship-2025.com
+db_host: "192.168.1.180"
+nginx_ip: "192.168.1.117"
+backend_servers: "{{ groups['backend'] | map('extract', hostvars, ['ansible_host']) | list }}"
+
+# Ports
+postgres_port: "5432"
+backend_port: "8080"

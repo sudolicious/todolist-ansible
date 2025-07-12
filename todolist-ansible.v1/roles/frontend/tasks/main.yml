@@ -1,0 +1,33 @@
+---
+- name: Clone full repository
+  become: yes
+  git:
+    repo: "{{ app_repo }}"
+    dest: "/opt/todolist/frontend"
+    version: "{{ app_version }}"
+    force: yes
+    
+- name: Build frontend image using docker command
+  become: yes
+  command: >
+    docker build
+    -t {{ frontend_image_name }}
+    -f {{ frontend_src_path }}/frontend/Dockerfile
+    {{ frontend_src_path }}/frontend
+  args:
+    creates: "{{ frontend_image_name }}"
+  register: build_result
+  changed_when: "'Successfully built' in build_result.stdout"
+
+- name: Deploy frontend container
+  become: yes
+  community.docker.docker_container:
+    name: frontend
+    image: "{{ frontend_image_name }}"
+    env:
+      REACT_APP_API_BASE_URL: "http://backend:8080"
+    ports:
+      - "3000:80"
+    networks:
+      - name: "{{ network_name }}"
+    restart_policy: "unless-stopped"

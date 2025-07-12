@@ -1,0 +1,22 @@
+[Unit]
+Description=Todolist Backend Service {{ backend_version }}
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory={{ backend_code_dir }}
+ExecStart={{ backend_code_dir }}/todolist-backend-{{ backend_version }}
+EnvironmentFile={{ backend_code_dir }}/.env
+Environment="DB_HOST={{ backend_db_host }}"
+Environment="DB_PORT={{ backend_db_port }}"
+Environment="DB_USER={{ backend_db_user }}"
+Environment="DB_PASSWORD={{ backend_db_password }}"
+Environment="DB_NAME={{ backend_db_name }}"
+Environment="APP_PORT={{ backend_port }}"
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

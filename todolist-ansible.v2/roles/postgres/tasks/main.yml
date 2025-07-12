@@ -1,0 +1,63 @@
+---
+- name: Install dependencies
+  apt:
+    name:
+      - python3
+      - python3-psycopg2
+      - postgresql-{{ postgres_version }}
+    state: present
+    update_cache: yes
+
+- name: Ensure PostgreSQL service is running
+  service:
+    name: postgresql
+    state: started
+    enabled: yes
+    
+- name: Set password and user
+  become_user: postgres
+  community.postgresql.postgresql_user:
+    name: "{{ postgres_user }}"
+    password: "{{ postgres_password }}"
+    role_attr_flags: "LOGIN"
+    encrypted: yes
+
+- name: Create database
+  become: yes
+  become_user: postgres
+  community.postgresql.postgresql_db:
+    name: "{{ postgres_db }}"
+    owner: "{{ postgres_user }}"
+    port: 5432
+    
+- name: Configure PostgreSQL to use SCRAM-SHA-256
+  become: yes
+  lineinfile:
+    path: "/etc/postgresql/{{ postgres_version }}/main/postgresql.conf"
+    regexp: "^password_encryption"
+    line: "password_encryption = scram-sha-256"
+    state: present
+  notify: restart postgresql
+
+- name: Configure PostgreSQL to listen on all interfaces
+  become: yes
+  lineinfile:
+    path: "/etc/postgresql/{{ postgres_version }}/main/postgresql.conf"
+    regexp: "^listen_addresses"
+    line: "listen_addresses = '*'"
+    state: present
+  notify: restart postgresql
+
+- name: Configure client authentication
+  become: yes
+  lineinfile:
+    path: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
+    line: "host    all             all             0.0.0.0/0               scram-sha-256"
+    state: present
+  notify: restart postgresql
+
+- name: Open PostgreSQL port in firewall
+  ufw:
+    rule: allow
+    port: "5432"
+    proto: tcp

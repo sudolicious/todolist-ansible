@@ -1,0 +1,68 @@
+---
+- name: Install git and Go
+  become: yes
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+  loop:
+    - git
+    - golang
+
+- name: Clone repository
+  git:
+    repo: "{{ backend_repo }}"
+    dest: "{{ backend_src_dir }}"
+    version: "{{ backend_version }}"
+    force: "{{ git_force_fetch | default('yes') }}"
+    update: yes
+
+- name: Create .env file
+  template:
+    src: ".env.j2"
+    dest: "{{ backend_code_dir }}/.env"
+    mode: "0644"
+
+- name: Install dependencies
+  shell: |
+    cd {{ backend_code_dir }}
+    go mod download
+
+- name: Build backend
+  shell: |
+    cd {{ backend_code_dir }}
+    go build -o todolist-backend-{{ backend_version }}
+
+- name: Create new versioned systemd service
+  template:
+    src: backend.service.j2
+    dest: "/etc/systemd/system/todolist-backend-{{ backend_version }}.service"
+  notify:
+    - restart backend
+
+- name: Flush handlers to restart backend
+  meta: flush_handlers
+
+- name: Enable and start new service
+  systemd:
+    name: "todolist-backend-{{ backend_version }}"
+    enabled: yes
+    state: started
+
+- name: Open port in firewall
+  ufw:
+    rule: allow
+    port: "{{ backend_port }}"
+    proto: tcp
+
+- name: Verify backend is healthy after deployment
+  uri:
+    url: "http://localhost:{{ backend_port }}/api/tasks"
+    method: GET
+    status_code: 200
+    timeout: 5
+  register: health_check
+  until: health_check.status == 200
+  retries: 10
+  delay: 3
+  changed_when: false

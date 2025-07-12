@@ -1,0 +1,38 @@
+---
+- name: Clone full repository
+  become: yes
+  ansible.builtin.git:
+    repo: "{{ app_repo }}"
+    dest: "{{ backend_src_path }}"
+    version: "{{ app_version }}"
+    force: yes
+
+- name: Create .env file from template
+  ansible.builtin.template:
+    src: "templates/.env.j2"
+    dest: "{{ backend_src_path }}/backend/.env"
+    mode: '0644'
+
+- name: Build backend image
+  become: yes
+  command: >
+    docker build
+    --platform linux/amd64
+    -t {{ backend_image_name }}
+    -f {{ backend_src_path }}/backend/Dockerfile
+    {{ backend_src_path }}/backend
+  args:
+    creates: "{{ backend_image_name }}"
+  register: build_result
+  changed_when: "'Successfully built' in build_result.stdout"
+
+- name: Run backend container
+  community.docker.docker_container:
+    name: backend
+    image: "{{ backend_image_name }}"
+    env_file: "{{ backend_src_path }}/backend/.env"
+    ports:
+      - "8080:8080"
+    networks:
+      - name: "{{ network_name }}"
+    restart_policy: "unless-stopped"

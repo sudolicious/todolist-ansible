@@ -1,0 +1,29 @@
+---
+- name: Deploy Database
+  hosts: databases
+  become: yes
+  tags: postgres
+  roles:
+    - postgres
+
+- name: Deploy Backend
+  hosts: backend
+  become: yes
+  serial: 1
+  tags: backend
+  roles:
+    - backend
+
+- name: Configure Nginx
+  hosts: frontend
+  become: yes
+  tags: nginx
+  roles:
+    - nginx
+
+- name: Deploy Frontend
+  hosts: frontend
+  become: yes
+  tags: frontend
+  roles:
+    - frontend

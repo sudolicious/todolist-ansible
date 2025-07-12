@@ -1,0 +1,43 @@
+---
+- name: Install Nginx
+  become: yes
+  apt:
+    name: nginx
+    state: present
+    update_cache: yes
+
+- name: Clean up default Nginx configs
+  become: yes
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/nginx/sites-enabled/default
+    - /etc/nginx/sites-available/default
+
+- name: Configure Nginx
+  template:
+    src: altenar.conf.j2
+    dest: /etc/nginx/sites-available/{{ domain_name }}.conf
+  notify: restart nginx
+
+- name: Enable site
+  file:
+    src: /etc/nginx/sites-available/{{ domain_name }}.conf
+    dest: /etc/nginx/sites-enabled/{{ domain_name }}.conf
+    state: link
+    force: yes
+
+- name: Validate Nginx configuration
+  become: yes
+  command: nginx -t
+  changed_when: false
+  register: nginx_validation
+  failed_when: nginx_validation.rc != 0
+
+- name: Restart Nginx if configuration is valid
+  become: yes
+  service:
+    name: nginx
+    state: restarted
+  when: nginx_validation.rc == 0

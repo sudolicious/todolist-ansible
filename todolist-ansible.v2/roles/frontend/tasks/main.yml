@@ -1,0 +1,34 @@
+---
+- name: Install Node.js and npm
+  apt:
+    name:
+      - nodejs
+      - npm
+    state: present
+  tags: nodejs
+
+- name: Clone repository
+  git:
+    repo: "{{ frontend_repo }}"
+    dest: "{{ frontend_src_dir }}"
+    version: "{{ frontend_branch }}"
+    force: yes
+    update: yes
+    
+- name: Create frontend .env file
+  copy:
+    content: |
+      REACT_APP_API_BASE_URL={{ frontend_api_url }}
+    dest: "{{ frontend_app_dir }}/.env"
+
+- name: Install dependencies
+  shell: |
+    cd {{ frontend_app_dir }}
+    npm install
+  args:
+    executable: /bin/bash 
+
+- name: Build frontend
+  shell: |
+    cd {{ frontend_app_dir }}
+    npm run build

@@ -1,0 +1,66 @@
+---
+- name: Rolling update backend servers
+  hosts: backend
+  become: yes
+  serial: 1
+  gather_facts: yes
+
+  pre_tasks:
+    - name: Validate version parameter
+      fail:
+        msg: "Usage: ansible-playbook rolling-update.yml -e 'backend_version=v1.2.3'"
+      when: backend_version is not defined or backend_version == ""
+
+    - name: Find and stop all existing backend services
+      block:
+        - name: Get list of backend services
+          command: systemctl list-unit-files --no-legend --no-pager "todolist-backend*"
+          register: backend_services
+          changed_when: false
+          ignore_errors: yes
+
+        - name: Stop all found services
+          systemd:
+            name: "{{ item.split()[0] }}"
+            state: stopped
+            enabled: no
+          loop: "{{ backend_services.stdout_lines }}"
+          when: backend_services.stdout_lines | length > 0
+          ignore_errors: yes
+          changed_when: false
+
+        - name: Remove conflicting Git tag if it exists
+          command: "git tag -d {{ backend_version }}"
+          args:
+            chdir: "{{ backend_src_dir }}"
+          ignore_errors: yes
+          tags:
+            - fix-tag-conflict
+
+  roles:
+    - role: backend
+      vars:
+        backend_version: "{{ backend_version }}"
+
+  post_tasks:
+    - name: Remove old service files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ lookup('fileglob', '/etc/systemd/system/todolist-backend*') }}"
+      ignore_errors: yes
+      when: lookup('fileglob', '/etc/systemd/system/todolist-backend*') | length > 0
+      notify: 
+        - reload systemd
+
+    - name: Verify backend health
+      uri:
+        url: "http://{{ ansible_host }}:{{ backend_port }}/api/tasks"
+        method: GET
+        status_code: 200
+        timeout: 10
+      register: health_check
+      until: health_check.status == 200
+      retries: 15
+      delay: 5
+      changed_when: false

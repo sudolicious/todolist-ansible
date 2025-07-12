@@ -1,0 +1,11 @@
+---
+- name: Deploy Todo Application
+  hosts: vm2
+  vars_files:
+    - vars.yml
+  
+  roles:
+    - common
+    - postgres
+    - backend
+    - frontend

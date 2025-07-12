@@ -1,0 +1,29 @@
+---
+- name: Create volume directory
+  become: yes
+  file:
+    path: "{{ postgres_volume_path }}"
+    state: directory
+    mode: '0755'
+
+- name: Deploy PostgreSQL container
+  become: yes
+  community.docker.docker_container:
+    name: postgres
+    image: "{{ postgres_image }}"
+    platform: "linux/amd64"
+    env:
+      POSTGRES_DB: "{{ postgres_db }}"
+      POSTGRES_USER: "{{ postgres_user }}"
+      POSTGRES_PASSWORD: "{{ postgres_password }}"
+    volumes:
+      - "{{ postgres_volume_path }}:/var/lib/postgresql/data"
+    ports:
+      - "5432:5432"
+    networks:
+      - name: "{{ network_name }}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U {{ postgres_user }} -d {{ postgres_db }}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
